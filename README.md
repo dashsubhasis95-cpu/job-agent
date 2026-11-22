@@ -136,27 +136,24 @@ CareerPilot combines the rankings from vector search and keyword search using Re
 
 Rather than combining raw similarity scores and keyword scores, RRF combines the positions of documents in their respective ranked lists.
 
-The formula is:
+The RRF score for a document is calculated as:
 
-\[
-\operatorname{RRF}(d)
-=
-\sum_{r \in R}
-\frac{1}{k+\operatorname{rank}_r(d)}
-\]
+$$
+\operatorname{RRF}(d) = \sum_{r \in R} \frac{1}{k + \operatorname{rank}_r(d)}
+$$
 
 Where:
 
-- \(d\) represents a job listing.
-- \(R\) represents the retrieval systems.
-- \(\operatorname{rank}_r(d)\) represents the rank of the job in retrieval system \(r\).
-- \(k\) is the rank-damping constant.
+- $d$ represents a job listing.
+- $R$ represents the retrieval systems.
+- $\operatorname{rank}_r(d)$ represents the rank of the job in retrieval system $r$.
+- $k$ is the rank-damping constant.
 
 CareerPilot uses:
 
-\[
-k=60
-\]
+$$
+k = 60
+$$
 
 Each job receives contributions from the retrieval systems in which it appears.
 
@@ -420,9 +417,9 @@ job-agent/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Zwymemory/Careerpilot.git
+git clone https://github.com/dashsubhasis95-cpu/job-agent.git
 
-cd Careerpilot
+cd job-agent
 ```
 
 ### 2. Configure Environment Variables
@@ -488,7 +485,9 @@ Example response:
 
 **Subhasis Dash**
 
-GitHub: [@Zwymemory](https://github.com/Zwymemory)
+GitHub: [@dashsubhasis95-cpu](https://github.com/dashsubhasis95-cpu)
+
+Project Repository: [CareerPilot](https://github.com/dashsubhasis95-cpu/job-agent)
 
 ---
 
