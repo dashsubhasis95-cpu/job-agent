@@ -1,14 +1,14 @@
 import json
 
-import anthropic
+from groq import Groq
 from psycopg.rows import dict_row
 from pydantic import BaseModel, ValidationError
 
-from .config import ANTHROPIC_API_KEY, LLM_MODEL
+from .config import GROQ_API_KEY, LLM_MODEL
 from .db import get_conn
 from .search import search_jobs
 
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+client = Groq(api_key=GROQ_API_KEY)
 
 SYSTEM = (
     "You are a job-search assistant. Use search_jobs to find roles; never invent jobs. "
@@ -16,47 +16,38 @@ SYSTEM = (
     "When you are done, call respond with a short message and the ids of the jobs you recommend."
 )
 
+
+def _tool(name: str, description: str, properties: dict, required: list[str]) -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": description,
+            "parameters": {"type": "object", "properties": properties, "required": required},
+        },
+    }
+
+
 TOOLS = [
-    {
-        "name": "search_jobs",
-        "description": "Semantic search over the jobs index. Supports optional location and remote filters.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "location": {"type": "string"},
-                "remote_only": {"type": "boolean"},
-                "k": {"type": "integer", "minimum": 1, "maximum": 10},
-            },
-            "required": ["query"],
+    _tool(
+        "search_jobs",
+        "Semantic search over the jobs index. Supports optional location and remote filters.",
+        {
+            "query": {"type": "string"},
+            "location": {"type": "string"},
+            "remote_only": {"type": "boolean"},
+            "k": {"type": "integer"},
         },
-    },
-    {
-        "name": "save_job",
-        "description": "Save a job for the current user.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"job_id": {"type": "integer"}},
-            "required": ["job_id"],
-        },
-    },
-    {
-        "name": "list_saved_jobs",
-        "description": "List the current user's saved jobs.",
-        "input_schema": {"type": "object", "properties": {}},
-    },
-    {
-        "name": "respond",
-        "description": "Final answer to the user. Always finish with this.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "message": {"type": "string"},
-                "job_ids": {"type": "array", "items": {"type": "integer"}},
-            },
-            "required": ["message"],
-        },
-    },
+        ["query"],
+    ),
+    _tool("save_job", "Save a job for the current user.", {"job_id": {"type": "integer"}}, ["job_id"]),
+    _tool("list_saved_jobs", "List the current user's saved jobs.", {}, []),
+    _tool(
+        "respond",
+        "Final answer to the user. Always finish with this.",
+        {"message": {"type": "string"}, "job_ids": {"type": "array", "items": {"type": "integer"}}},
+        ["message"],
+    ),
 ]
 
 
@@ -94,44 +85,59 @@ def _run_tool(name: str, args: dict, session_id: str):
 
 def chat(session_id: str, text: str) -> AgentReply:
     history = SESSIONS.setdefault(session_id, [])
-    msgs = history[-20:] + [{"role": "user", "content": text}]
+    msgs = [{"role": "system", "content": SYSTEM}] + history[-20:] + [{"role": "user", "content": text}]
     final: AgentReply | None = None
 
     for _ in range(MAX_STEPS):
-        resp = client.messages.create(
+        resp = client.chat.completions.create(
             model=LLM_MODEL,
-            max_tokens=1000,
-            system=SYSTEM,
-            tools=TOOLS,
-            tool_choice={"type": "any"},  # always call a tool; "respond" ends the loop
             messages=msgs,
+            tools=TOOLS,
+            tool_choice="auto",
+            max_tokens=1000,
         )
-        msgs.append({"role": "assistant", "content": resp.content})
-        results = []
-        for block in resp.content:
-            if block.type != "tool_use":
-                continue
-            if block.name == "respond":
+        msg = resp.choices[0].message
+
+        if not msg.tool_calls:  # model answered in plain text: use it as the final answer
+            final = AgentReply(message=msg.content or "Sorry, I have no answer.")
+            break
+
+        msgs.append(
+            {
+                "role": "assistant",
+                "content": msg.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in msg.tool_calls
+                ],
+            }
+        )
+
+        for tc in msg.tool_calls:
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+
+            if tc.function.name == "respond":
                 try:
-                    final = AgentReply(**block.input)
+                    final = AgentReply(**args)
                 except ValidationError:
                     final = AgentReply(message="Sorry, I couldn't format that answer.")
-                results.append({"type": "tool_result", "tool_use_id": block.id, "content": "ok"})
+                out = "ok"
             else:
                 try:
-                    out = _run_tool(block.name, block.input, session_id)
+                    out = json.dumps(_run_tool(tc.function.name, args, session_id), default=str)
                 except Exception as e:  # return errors to the model so it can recover
-                    out = {"error": str(e)}
-                results.append(
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": json.dumps(out, default=str),
-                    }
-                )
+                    out = json.dumps({"error": str(e)})
+            msgs.append({"role": "tool", "tool_call_id": tc.id, "content": out})
+
         if final:
             break
-        msgs.append({"role": "user", "content": results})
 
     if final is None:
         final = AgentReply(message="Sorry, I couldn't finish that. Try rephrasing.")

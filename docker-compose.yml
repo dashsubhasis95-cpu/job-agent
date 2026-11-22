@@ -23,8 +23,8 @@ services:
     environment: &env
       DATABASE_URL: postgresql://jobs:jobs@db:5432/jobs
       REDIS_URL: redis://redis:6379/0
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      LLM_MODEL: ${LLM_MODEL:-claude-sonnet-5-5}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-llama-3.3-70b-versatile}
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_started}
