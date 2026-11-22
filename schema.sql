@@ -29,6 +29,12 @@ CREATE TABLE jobs (
     posted_at    TIMESTAMPTZ,
     content_hash TEXT NOT NULL,          -- skip re-embedding unchanged jobs
     embedding    vector(384),
+    -- Precomputed full-text document: title matches (A) outrank description matches (B).
+    -- Postgres keeps it in sync automatically, so ingestion code does not touch it.
+    fts          tsvector GENERATED ALWAYS AS (
+                     setweight(to_tsvector('english', title), 'A') ||
+                     setweight(to_tsvector('english', description), 'B')
+                 ) STORED,
     run_id       BIGINT REFERENCES ingestion_runs(id),
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -39,14 +45,4 @@ CREATE TABLE saved_jobs (
     id        BIGSERIAL PRIMARY KEY,
     user_ref  TEXT NOT NULL,             -- session/user id, no accounts needed for MVP
     job_id    BIGINT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
-    saved_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (user_ref, job_id)
-);
-
--- Indexes
-CREATE INDEX jobs_embedding_hnsw ON jobs USING hnsw (embedding vector_cosine_ops);
-CREATE INDEX jobs_location_idx   ON jobs (location);
-CREATE INDEX jobs_company_idx    ON jobs (company);
-CREATE INDEX jobs_posted_idx     ON jobs (posted_at DESC);
-CREATE INDEX jobs_fts_idx        ON jobs USING gin (to_tsvector('english', title || ' ' || description));
-CREATE INDEX saved_jobs_user_idx ON saved_jobs (user_ref);
+    saved_at

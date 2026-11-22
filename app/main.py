@@ -23,8 +23,8 @@ def health():
 
 @app.post("/ingest")
 def ingest(pages: int = 5):
-    run_id = start_ingestion.delay(pages).id
-    return {"queued": True, "task_id": run_id}
+    task_id = start_ingestion.delay(pages).id
+    return {"queued": True, "task_id": task_id}
 
 
 @app.get("/ingest/runs")
@@ -39,8 +39,14 @@ def ingest_runs():
 
 
 @app.get("/search")
-def search(q: str, location: str | None = None, remote: bool = False, k: int = 5):
-    return search_jobs(q, location, remote, k)
+def search(
+    q: str,
+    location: str | None = None,
+    remote: bool = False,
+    k: int = 5,
+    mode: str = "hybrid",  # "hybrid" (vector + full-text) or "vector"
+):
+    return search_jobs(q, location, remote, k, mode)
 
 
 @app.post("/chat")
