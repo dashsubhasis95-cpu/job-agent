@@ -130,24 +130,24 @@ The keyword retrieval pipeline:
 
 Keyword search helps retrieve opportunities containing specific technologies, skills or job titles.
 
-### 3. Reciprocal Rank Fusion (RRF)
+### Reciprocal Rank Fusion (RRF)
 
-CareerPilot combines the rankings from vector search and keyword search using Reciprocal Rank Fusion.
+CareerPilot combines the rankings from vector search and keyword search using **Reciprocal Rank Fusion (RRF)**.
 
 Rather than combining raw similarity scores and keyword scores, RRF combines the positions of documents in their respective ranked lists.
 
 The RRF score for a document is calculated as:
 
 $$
-\operatorname{RRF}(d) = \sum_{r \in R} \frac{1}{k + \operatorname{rank}_r(d)}
+\mathrm{RRF}(d) = \sum_{r \in R} \frac{1}{k + \mathrm{rank}_r(d)}
 $$
 
 Where:
 
-- $d$ represents a job listing.
-- $R$ represents the retrieval systems.
-- $\operatorname{rank}_r(d)$ represents the rank of the job in retrieval system $r$.
-- $k$ is the rank-damping constant.
+- `d` represents a job listing.
+- `R` represents the retrieval systems (vector search and keyword search).
+- $\mathrm{rank}_r(d)$ represents the rank of the job listing in retrieval system `r`.
+- `k` is the rank-damping constant.
 
 CareerPilot uses:
 
