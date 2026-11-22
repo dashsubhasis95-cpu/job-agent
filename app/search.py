@@ -14,13 +14,19 @@ ORDER BY embedding <=> %(q)s
 LIMIT %(k)s
 """
 
-
 def search_jobs(query: str, location: str | None = None, remote_only: bool = False, k: int = 5) -> list[dict]:
     qvec = embed([query])[0]
     with get_conn() as conn, conn.cursor(row_factory=dict_row) as cur:
-        cur.execute(SEARCH_SQL, {"q": qvec, "loc": location, "remote": remote_only, "k": k})
-        return cur.fetchall()
+        cur.execute(SEARCH_SQL, {"q": qvec, "loc": location, "remote": remote_only, "k": k * 4})
+        rows = cur.fetchall()
 
+    seen, unique = set(), []
+    for r in rows:  # same job posted under several URLs: keep the best-scoring copy
+        key = (r["title"].lower(), (r["company"] or "").lower(), (r["location"] or "").lower())
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
+    return unique[:k]
 
 def get_jobs(ids: list[int]) -> list[dict]:
     if not ids:
