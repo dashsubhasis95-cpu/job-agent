@@ -1,5 +1,5 @@
 
-# CareerPilot — AI-Powered Job Search Agent
+# JobGraph — AI-Powered Job Search Agent
 
 <p align="center">
   <strong>An intelligent job-search agent combining semantic retrieval, keyword search, ranking, and LLM-based tool orchestration.</strong>
@@ -18,13 +18,13 @@
 
 ## Overview
 
-CareerPilot is an AI-powered job-search agent designed to make job discovery more intelligent, contextual and relevant.
+JobGraph is an AI-powered job-search agent designed to make job discovery more intelligent, contextual and relevant.
 
 Traditional job-search systems often depend heavily on keyword matching. CareerPilot combines **semantic vector retrieval** and **PostgreSQL full-text search** through **Reciprocal Rank Fusion (RRF)** to retrieve and rank relevant job opportunities.
 
 The system integrates LLM-based tool calling, structured argument validation, session-level memory and asynchronous job ingestion to connect natural-language interactions with a search backend.
 
-CareerPilot also includes a retrieval evaluation pipeline to compare hybrid search against a vector-only baseline and measure search quality and latency.
+JobGraph also includes a retrieval evaluation pipeline to compare hybrid search against a vector-only baseline and measure search quality and latency.
 
 ---
 
@@ -117,7 +117,7 @@ The vector retrieval system retrieves up to **50 candidate jobs** before fusion.
 
 ### 2. PostgreSQL Full-Text Search
 
-CareerPilot also uses PostgreSQL Full-Text Search to retrieve jobs matching query terms.
+JobGraph also uses PostgreSQL Full-Text Search to retrieve jobs matching query terms.
 
 The keyword retrieval pipeline:
 
@@ -132,7 +132,7 @@ Keyword search helps retrieve opportunities containing specific technologies, sk
 
 ### Reciprocal Rank Fusion (RRF)
 
-CareerPilot combines the rankings from vector search and keyword search using **Reciprocal Rank Fusion (RRF)**.
+JobGraph combines the rankings from vector search and keyword search using **Reciprocal Rank Fusion (RRF)**.
 
 Rather than combining raw similarity scores and keyword scores, RRF combines the positions of documents in their respective ranked lists.
 
@@ -149,7 +149,7 @@ Where:
 - $\mathrm{rank}_r(d)$ represents the rank of the job listing in retrieval system `r`.
 - `k` is the rank-damping constant.
 
-CareerPilot uses:
+JobGraph uses:
 
 $$
 k = 60
@@ -196,7 +196,7 @@ def _rrf(*ranked_lists):
 
 ### 4. Deduplication
 
-CareerPilot identifies duplicate job listings using a normalized key consisting of:
+JobGraph identifies duplicate job listings using a normalized key consisting of:
 
 - Job title
 - Company
@@ -217,7 +217,7 @@ These filters are applied to both retrieval legs before fusion.
 
 ## Retrieval Evaluation
 
-CareerPilot was evaluated by comparing hybrid retrieval against a vector-only baseline.
+JobGraph was evaluated by comparing hybrid retrieval against a vector-only baseline.
 
 The evaluation was conducted using **30 queries** with keyword-based relevance judgments based primarily on job titles.
 
@@ -487,7 +487,7 @@ Example response:
 
 GitHub: [@dashsubhasis95-cpu](https://github.com/dashsubhasis95-cpu)
 
-Project Repository: [CareerPilot](https://github.com/dashsubhasis95-cpu/job-agent)
+Project Repository: [JobGraph](https://github.com/dashsubhasis95-cpu/job-agent)
 
 ---
 
