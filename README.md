@@ -99,7 +99,7 @@ flowchart TD
 
 ## Retrieval Pipeline
 
-CareerPilot uses a hybrid retrieval approach consisting of two independent retrieval systems.
+JobGraph uses a hybrid retrieval approach consisting of two independent retrieval systems.
 
 ### 1. Semantic Vector Search
 
