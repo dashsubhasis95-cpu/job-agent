@@ -290,7 +290,7 @@ The optimization focused on improving the query execution path rather than chang
 
 ## AI Agent
 
-CareerPilot integrates LLM-based tool calling to connect natural-language interactions with backend job-search functionality.
+JobGraph integrates LLM-based tool calling to connect natural-language interactions with backend job-search functionality.
 
 ### Agent Capabilities
 
